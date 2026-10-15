@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ t('profile_title') }}{% endblock %}
+{% block content %}
+{% set kyc = me.kyc %}
+<section class="page-heading"><span class="eyebrow">{{ t('profile_eyebrow') }}</span><h1>{{ t('profile_title') }}</h1><p class="lead">{{ t('profile_lead') }}</p></section>
+
+<div class="profile-hero">
+    <span class="avatar avatar-lg">{{ (session.get('user_name','U')[:1] or 'U')|upper }}</span>
+    <div class="profile-id"><h2>{{ session.get('user_name','') }}</h2><span dir="ltr">{{ session.get('user_email') }}</span></div>
+    <div class="pills">
+        <span class="pill {{ 'pill-ok' if me.email_verified else 'pill-warn' }}"><i class="fa-regular fa-envelope"></i> {{ t('pill_email_ok') if me.email_verified else t('pill_email_no') }}</span>
+        <span class="pill {{ {'verified':'pill-ok','pending':'pill-info','rejected':'pill-danger'}.get(kyc.get('status'), 'pill-warn') }}"><i class="fa-regular fa-id-card"></i> {{ t('kyc_status_' ~ (kyc.get('status') or 'none')) }}</span>
+    </div>
+</div>
+
+<div class="profile-grid">
+    <section class="panel" id="email">
+        <header><span class="step {{ 'step-done' if me.email_verified }}">{% if me.email_verified %}<i class="fa-solid fa-check"></i>{% else %}1{% endif %}</span><h2>{{ t('step_email') }}</h2></header>
+        {% if me.email_verified %}
+            <p class="ok-text"><i class="fa-solid fa-circle-check"></i> {{ t('email_verified_msg') }}</p>
+        {% else %}
+            <p>{{ t('email_verify_text', email=session.get('user_email')) }}</p>
+            <form method="post" action="{{ url_for('profil_email_envoyer') }}" class="inline-form">{{ csrf_input() }}<button class="btn btn-outline"><i class="fa-regular fa-paper-plane"></i> {{ t('send_code') }}</button></form>
+            <form method="post" action="{{ url_for('profil_email_verifier') }}" class="code-form">{{ csrf_input() }}
+                <input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" dir="ltr" required aria-label="{{ t('code_label') }}">
+                <button class="btn btn-primary">{{ t('verify') }}</button>
+            </form>
+            <p class="hint">{{ t('code_hint') }}</p>
+        {% endif %}
+    </section>
+
+    <section class="panel" id="identity">
+        <header><span class="step {{ 'step-done' if kyc.get('status') == 'verified' }}">{% if kyc.get('status') == 'verified' %}<i class="fa-solid fa-check"></i>{% else %}2{% endif %}</span><h2>{{ t('step_identity') }}</h2></header>
+        {% if kyc.get('status') == 'verified' %}
+            <p class="ok-text"><i class="fa-solid fa-circle-check"></i> {{ t('kyc_verified_msg') }}</p>
+        {% elif kyc.get('status') == 'pending' %}
+            <p class="info-text"><i class="fa-regular fa-clock"></i> {{ t('kyc_pending_msg') }}</p>
+        {% else %}
+            {% if kyc.get('status') == 'rejected' %}<div class="flash flash-danger">{{ t('kyc_rejected_msg') }}{% if kyc.get('note') %} — {{ kyc.get('note') }}{% endif %}</div>{% endif %}
+            {% if not me.email_verified %}<p class="hint locked"><i class="fa-solid fa-lock"></i> {{ t('kyc_locked') }}</p>{% endif %}
+            <form method="post" action="{{ url_for('profil_identite') }}" enctype="multipart/form-data" class="upload-form">{{ csrf_input() }}
+                <fieldset {{ 'disabled' if not me.email_verified }}>
+                    <ul class="tips"><li>{{ t('tip_light') }}</li><li>{{ t('tip_card') }}</li><li>{{ t('tip_face') }}</li></ul>
+                    <div class="upload-grid">
+                        <label class="upload"><span class="upload-title"><i class="fa-regular fa-id-card"></i> {{ t('cin_front') }} *</span>
+                            <input type="file" name="cin_recto" id="cin_recto" accept="image/*" capture="environment" data-preview="pv-recto" required>
+                            <img id="pv-recto" class="preview" alt="" hidden></label>
+                        <label class="upload"><span class="upload-title"><i class="fa-solid fa-rotate"></i> {{ t('cin_back') }}</span>
+                            <input type="file" name="cin_verso" id="cin_verso" accept="image/*" capture="environment" data-preview="pv-verso">
+                            <img id="pv-verso" class="preview" alt="" hidden></label>
+                        <div class="upload"><label for="selfie" class="upload-title"><i class="fa-regular fa-face-smile"></i> {{ t('selfie') }} *</label>
+                            <input type="file" name="selfie" id="selfie" accept="image/*" capture="user" data-preview="pv-selfie" required>
+                            <button type="button" class="btn btn-outline btn-sm" id="selfie-camera" data-err="{{ t('camera_error') }}"><i class="fa-solid fa-camera"></i> {{ t('use_camera') }}</button>
+                            <div id="camera-box" class="camera-box" hidden><video id="cam-video" autoplay playsinline muted></video>
+                                <div class="actions"><button type="button" class="btn btn-primary btn-sm" id="cam-snap"><i class="fa-solid fa-camera"></i> {{ t('take_photo') }}</button><button type="button" class="btn btn-ghost btn-sm" id="cam-cancel">{{ t('cancel') }}</button></div></div>
+                            <img id="pv-selfie" class="preview" alt="" hidden></div>
+                    </div>
+                    <label class="consent"><input type="checkbox" name="consent" value="1" required> <span>{{ t('kyc_consent') }}</span></label>
+                    <button class="btn btn-primary btn-large"><i class="fa-solid fa-shield-halved"></i> {{ t('kyc_submit') }}</button>
+                </fieldset>
+            </form>
+        {% endif %}
+        {% if kyc.get('status') in ('pending','verified') %}
+            <form method="post" action="{{ url_for('profil_identite_supprimer') }}" onsubmit="return confirm('{{ t('kyc_delete_confirm')|e }}')">{{ csrf_input() }}<button class="btn btn-ghost btn-sm danger-link"><i class="fa-regular fa-trash-can"></i> {{ t('kyc_delete') }}</button></form>
+        {% endif %}
+        <p class="hint"><i class="fa-solid fa-lock"></i> {{ t('kyc_privacy') }}</p>
+    </section>
+
+    <section class="panel panel-wide" id="infos">
+        <header><span class="step"><i class="fa-regular fa-user"></i></span><h2>{{ t('step_infos') }}</h2></header>
+        <p class="hint">{{ t('infos_hint') }}</p>
+        <form method="post" action="{{ url_for('page_profil') }}" class="form-card flat">{{ csrf_input() }}
+            <div class="form-row">
+                <label>{{ t('f_fullname') }}<input name="full_name" value="{{ me.profile.get('full_name') or session.get('user_name','') }}" maxlength="100"></label>
+                <label>{{ t('f_phone') }}<input name="phone" value="{{ me.profile.get('phone','') }}" maxlength="20" dir="ltr" placeholder="+212 6 00 00 00 00"></label>
+            </div>
+            <div class="form-row">
+                <label>{{ t('f_city') }}<input name="city" value="{{ me.profile.get('city','') }}" maxlength="60"></label>
+                <label>{{ t('f_status') }}<input name="formation" value="{{ me.profile.get('formation','') }}" maxlength="200" placeholder="{{ t('ph_status') }}"></label>
+            </div>
+            <button class="btn btn-primary"><i class="fa-regular fa-floppy-disk"></i> {{ t('save') }}</button>
+        </form>
+    </section>
+</div>
+
+<script>
+(function () {
+    // Compression des photos dans le navigateur avant l'envoi (limite de 4,5 Mo par requête sur Vercel)
+    var form = document.querySelector('form.upload-form');
+    if (form && window.createImageBitmap) {
+        var shrink = function (file) {
+            return createImageBitmap(file).then(function (bmp) {
+                var k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
+                c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+                c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+                return new Promise(function (ok) { c.toBlob(ok, 'image/jpeg', 0.85); });
+            });
+        };
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.ready) return;
+            e.preventDefault();
+            var jobs = [];
+            form.querySelectorAll('input[type=file]').forEach(function (inp) {
+                if (!inp.files || !inp.files[0]) return;
+                jobs.push(shrink(inp.files[0]).then(function (blob) {
+                    if (!blob) return;
+                    var dt = new DataTransfer(); dt.items.add(new File([blob], inp.name + '.jpg', { type: 'image/jpeg' })); inp.files = dt.files;
+                }).catch(function () {}));
+            });
+            Promise.all(jobs).then(function () { form.dataset.ready = '1'; form.submit(); });
+        });
+    }
+    // aperçu des images choisies
+    document.querySelectorAll('input[type=file][data-preview]').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+            var img = document.getElementById(inp.dataset.preview);
+            if (inp.files && inp.files[0]) { img.src = URL.createObjectURL(inp.files[0]); img.hidden = false; } else { img.hidden = true; }
+        });
+    });
+    // selfie via la caméra du navigateur (HTTPS ou localhost requis)
+    var btn = document.getElementById('selfie-camera');
+    if (!btn) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { btn.hidden = true; return; }
+    var box = document.getElementById('camera-box'), video = document.getElementById('cam-video'),
+        input = document.getElementById('selfie'), stream = null;
+    function stop() { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; box.hidden = true; }
+    btn.addEventListener('click', function () {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }).then(function (s) {
+            stream = s; video.srcObject = s; box.hidden = false;
+        }).catch(function () { alert(btn.dataset.err); });
+    });
+    document.getElementById('cam-cancel').addEventListener('click', stop);
+    document.getElementById('cam-snap').addEventListener('click', function () {
+        var c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        c.toBlob(function (blob) {
+            var dt = new DataTransfer(); dt.items.add(new File([blob], 'selfie.jpg', { type: 'image/jpeg' }));
+            input.files = dt.files; input.dispatchEvent(new Event('change')); stop();
+        }, 'image/jpeg', 0.9);
+    });
+})();
+</script>
+{% endblock %}

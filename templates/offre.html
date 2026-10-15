@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ o.titre }}{% endblock %}
+{% block content %}
+{% set next_url = request.path %}
+{% set subject, body, to = stage_message(o) %}
+<a href="{{ url_for('page_offres') }}" class="back-link"><i class="fa-solid fa-arrow-left arrow"></i> {{ t('back_offers') }}</a>
+<article class="detail">
+    <div class="job-head">
+        <span class="job-logo job-logo-lg">{{ ((o.entreprise or o.source or '?')[:1])|upper }}</span>
+        <div class="job-title-wrap"><h1 dir="auto">{{ o.titre }}</h1><div class="job-company">{{ o.entreprise or o.source }}</div></div>
+        {% if applied.get(o.lien) %}<span class="badge badge-ok"><i class="fa-solid fa-check"></i> {{ t('applied') }}</span>{% endif %}
+    </div>
+    <div class="tags">
+        <span class="tag"><i class="fa-solid fa-location-dot"></i> {{ o.ville }}</span>
+        <span class="tag"><i class="fa-solid fa-globe"></i> {{ o.source }}</span>
+        {% if o.date_publication_norm %}<span class="tag"><i class="fa-regular fa-calendar"></i> {{ o.date_publication_norm }}</span>{% endif %}
+    </div>
+    <div class="actions">
+        <a class="btn btn-primary" href="{{ o.lien }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ t('apply') }}</a>
+        <a class="btn btn-mail" href="{{ gmail_offre(o) }}" target="_blank" rel="noopener"><i class="fa-regular fa-envelope"></i> {{ t('contact_email') }}</a>
+        <form method="post" action="{{ url_for('toggle') }}" class="inline-form">{{ csrf_input() }}
+            <input type="hidden" name="key" value="{{ o.lien }}"><input type="hidden" name="next" value="{{ next_url }}">
+            {% if applied.get(o.lien) %}<button class="btn btn-success" title="{{ t('click_to_remove') }}"><i class="fa-solid fa-check"></i> {{ t('applied') }}</button>
+            {% else %}<button class="btn btn-outline"><i class="fa-regular fa-square-check"></i> {{ t('mark_applied') }}</button>{% endif %}
+        </form>
+        <a class="btn btn-ghost" href="{{ maps_ville(o.ville) }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> {{ t('location') }}</a>
+    </div>
+
+    <details class="mail-preview">
+        <summary><i class="fa-regular fa-envelope-open"></i> {{ t('mail_preview') }}</summary>
+        <dl>
+            <dt>{{ t('mail_to') }}</dt><dd>{{ to or t('mail_to_empty') }}</dd>
+            <dt>{{ t('mail_subject') }}</dt><dd>{{ subject }}</dd>
+        </dl>
+        <pre>{{ body }}</pre>
+        <p class="hint"><i class="fa-solid fa-paperclip"></i> {{ t('mail_attach_hint') }}</p>
+    </details>
+
+    <h2>{{ t('description') }}</h2>
+    <p class="description" dir="auto">{{ o.description }}</p>
+    <section class="comments" id="commentaires">
+        <h2>{{ t('comments_title', n=commentaires|length) }}</h2>
+        {% if me.email_verified %}
+        <form method="post" action="{{ url_for('ajouter_commentaire', offre_id=o.id) }}" class="comment-form">{{ csrf_input() }}
+            <textarea name="texte" rows="3" maxlength="1000" placeholder="{{ t('comment_ph') }}" dir="auto" required></textarea>
+            <button class="btn btn-primary btn-sm"><i class="fa-regular fa-paper-plane"></i> {{ t('comment_submit') }}</button>
+        </form>
+        {% else %}
+        <p class="hint locked"><i class="fa-solid fa-lock"></i> {{ t('comment_need_email') }} <a href="{{ url_for('page_profil') }}#email">{{ t('comment_need_email_link') }}</a></p>
+        {% endif %}
+        {% for c in commentaires %}
+        <article class="comment">
+            <span class="avatar">{{ (c.name[:1] or '?')|upper }}</span>
+            <div class="comment-body">
+                <div class="comment-head"><b>{{ c.name }}</b><small>{{ c.date[:10] }}</small></div>
+                <p dir="auto">{{ c.texte }}</p>
+            </div>
+            {% if c.email == session.get('user_email') or is_admin %}
+            <form method="post" action="{{ url_for('supprimer_commentaire', cid=c.id) }}" onsubmit="return confirm('{{ t('comment_delete_confirm')|e }}')">{{ csrf_input() }}
+                <input type="hidden" name="next" value="{{ request.path }}#commentaires">
+                <button class="btn btn-ghost btn-sm danger-link" title="{{ t('comment_delete') }}"><i class="fa-regular fa-trash-can"></i></button>
+            </form>
+            {% endif %}
+        </article>
+        {% else %}<p class="empty">{{ t('comment_none') }}</p>{% endfor %}
+    </section>
+
+    {% if embed %}<h2>{{ t('location') }} ({{ o.ville }})</h2><div class="map-frame"><iframe src="{{ embed }}" loading="lazy" allowfullscreen></iframe></div>{% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}{{ t('eval_title') }}{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ t('eval_eyebrow') }}</span><h1>{{ t('eval_title') }}</h1><p class="lead">{{ t('eval_lead') }}</p></section>
+<form method="post" enctype="multipart/form-data" class="form-card evaluator-card">{{ csrf_input() }}
+    <label>{{ t('eval_file') }}<input type="file" name="cv_file" accept="application/pdf,.pdf" required></label>
+    <label>{{ t('eval_offer') }}<select name="offre_id"><option value="">{{ t('eval_general') }}</option>{% for o in offres %}<option value="{{ o.id }}">{{ o.titre }}{% if o.entreprise %} — {{ o.entreprise }}{% endif %}</option>{% endfor %}</select></label>
+    <button type="submit" class="btn btn-primary btn-large"><i class="fa-solid fa-magnifying-glass-chart"></i> {{ t('eval_submit') }}</button>
+    <p class="hint">{{ t('eval_note') }}</p>
+</form>
+{% if resultat %}
+<section class="evaluation-result">
+    <div class="score-panel"><span>{{ t('eval_score') }}</span><strong>{{ resultat.get('score_sur_100','—') }}<small>/100</small></strong></div>
+    <div class="evaluation-content">
+        <h2>{{ t('eval_summary') }}</h2><p>{{ resultat.get('resume','') }}</p>
+        <div class="evaluation-grid">
+            {% for key,label in [('points_forts',t('eval_strengths')),('points_faibles',t('eval_weaknesses')),('competences',t('eval_skills')),('competences_manquantes',t('eval_missing')),('recommandations',t('eval_reco'))] %}
+            <article class="evaluation-block"><h3>{{ label }}</h3>{% if resultat.get(key) %}<ul>{% for item in resultat.get(key,[]) %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<p>—</p>{% endif %}</article>
+            {% endfor %}
+        </div>
+        <h2>{{ t('eval_compat') }}</h2><p>{{ resultat.get('compatibilite_offre','—') }}</p>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

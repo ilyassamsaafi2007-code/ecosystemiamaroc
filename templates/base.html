@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ t('app_name') }}{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body class="app-shell">
+<aside class="sidebar">
+    <a href="{{ url_for('page_offres') }}" class="logo"><span class="logo-mark">AI</span><span class="logo-text">{{ t('app_name') }}</span></a>
+    <div class="sidebar-caption">{{ t('menu_main') }}</div>
+    <nav>
+        <a href="{{ url_for('page_offres') }}" class="{{ 'active' if request.endpoint in ('page_offres','page_offre') }}"><i class="fa-solid fa-briefcase"></i><span>{{ t('nav_offers') }}</span></a>
+        <a href="{{ url_for('page_entreprises') }}" class="{{ 'active' if request.endpoint == 'page_entreprises' }}"><i class="fa-solid fa-building"></i><span>{{ t('nav_companies') }}</span></a>
+        <a href="{{ url_for('page_dashboard') }}" class="{{ 'active' if request.endpoint == 'page_dashboard' }}"><i class="fa-solid fa-chart-line"></i><span>{{ t('nav_dashboard') }}</span></a>
+        <a href="{{ url_for('page_cv') }}" class="{{ 'active' if request.endpoint == 'page_cv' }}"><i class="fa-regular fa-file-lines"></i><span>{{ t('nav_cv') }}</span></a>
+        <a href="{{ url_for('evaluer_cv') }}" class="{{ 'active' if request.endpoint == 'evaluer_cv' }}"><i class="fa-solid fa-wand-magic-sparkles"></i><span>{{ t('nav_eval') }}</span></a>
+        <a href="{{ url_for('page_profil') }}" class="{{ 'active' if request.endpoint == 'page_profil' }}"><i class="fa-regular fa-id-card"></i><span>{{ t('nav_profile') }}</span>{% if not me.fully_verified %}<em class="nav-dot" title="{{ t('unverified_profile') }}"></em>{% endif %}</a>
+        {% if is_admin %}<a href="{{ url_for('admin_verifications') }}" class="{{ 'active' if request.endpoint == 'admin_verifications' }}"><i class="fa-solid fa-user-shield"></i><span>{{ t('nav_admin') }}</span></a>{% endif %}
+    </nav>
+    <div class="sidebar-bottom">
+        <a class="user-mini" href="{{ url_for('page_profil') }}">
+            <span class="avatar">{{ (session.get('user_name','U')[:1] or 'U')|upper }}</span>
+            <span class="user-text"><b>{{ session.get('user_name','') }}</b>
+                <small class="vstate {{ 'ok' if me.fully_verified }}">
+                {% if me.fully_verified %}<i class="fa-solid fa-circle-check"></i> {{ t('verified_profile') }}{% else %}<i class="fa-regular fa-circle"></i> {{ t('unverified_profile') }}{% endif %}</small></span>
+        </a>
+        <form method="post" action="{{ url_for('logout') }}">{{ csrf_input() }}<button class="logout-button" type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>{{ t('logout') }}</span></button></form>
+    </div>
+</aside>
+<main class="main-area">
+    <div class="topbar">
+        <span class="topbar-label">{{ t('tagline') }}</span>
+        <div class="topbar-right">{% include '_lang_switch.html' %}<span class="secure-label"><i class="fa-solid fa-shield-halved"></i> {{ t('secure_space') }}</span></div>
+    </div>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash flash-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    <footer>{{ t('footer') }}</footer>
+</main>
+<button id="chat-toggle" class="chat-toggle" aria-label="{{ t('chat_open') }}"><i class="fa-regular fa-message"></i></button>
+<div id="chat-box" class="chat-box" hidden>
+    <div class="chat-header"><span>{{ t('chat_title') }}</span><button id="chat-close" aria-label="{{ t('close') }}"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-chips" id="chat-chips"><button>Offres à Rabat</button><button>Entreprises à Marrakech</button><button>Meilleures entreprises</button><button>Kifach nposti ?</button></div>
+    <form id="chat-form" class="chat-form" autocomplete="off"><input id="chat-input" type="text" placeholder="{{ t('chat_placeholder') }}" maxlength="300"><button type="submit" aria-label="{{ t('send') }}"><i class="fa-solid fa-arrow-up"></i></button></form>
+</div>
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>

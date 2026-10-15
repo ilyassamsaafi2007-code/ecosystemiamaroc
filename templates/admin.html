@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin_title') }}{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ t('admin_eyebrow') }}</span><h1>{{ t('admin_title') }}</h1><p class="lead">{{ t('admin_lead') }}</p></section>
+
+<h2>{{ t('admin_pending') }} ({{ pending|length }})</h2>
+{% for r in pending %}
+<article class="panel kyc-review">
+    <header><div><h3>{{ r.name }}</h3><span dir="ltr" class="muted">{{ r.email }}</span></div><span class="pill pill-info">{{ r.kyc.get('submitted_at','')[:16]|replace('T',' ') }}</span></header>
+    <div class="kyc-images">
+        {% for kind, label in [('cin_recto', t('cin_front')), ('cin_verso', t('cin_back')), ('selfie', t('selfie'))] %}
+            {% if kind in r.kyc.get('files', []) %}<figure><a href="{{ url_for('admin_kyc_image', uid=r.uid, kind=kind) }}" target="_blank" rel="noopener"><img src="{{ url_for('admin_kyc_image', uid=r.uid, kind=kind) }}" alt="{{ label }}" loading="lazy"></a><figcaption>{{ label }}</figcaption></figure>{% endif %}
+        {% endfor %}
+    </div>
+    <p class="hint">{{ t('admin_check') }}</p>
+    <form method="post" action="{{ url_for('admin_decision', uid=r.uid) }}" class="decision">{{ csrf_input() }}
+        <input name="note" maxlength="200" placeholder="{{ t('admin_note_ph') }}">
+        <button name="decision" value="verified" class="btn btn-success"><i class="fa-solid fa-check"></i> {{ t('approve') }}</button>
+        <button name="decision" value="rejected" class="btn btn-outline danger-link"><i class="fa-solid fa-xmark"></i> {{ t('reject') }}</button>
+    </form>
+</article>
+{% else %}<p class="empty">{{ t('admin_none') }}</p>{% endfor %}
+
+<h2>{{ t('admin_users') }} ({{ rows|length }})</h2>
+<div class="table-wrap"><table class="table">
+    <thead><tr><th>{{ t('f_fullname') }}</th><th>{{ t('f_email') }}</th><th>{{ t('step_email') }}</th><th>{{ t('step_identity') }}</th><th>{{ t('admin_created') }}</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+        <td>{{ r.name }}</td><td dir="ltr">{{ r.email }}</td>
+        <td><span class="pill {{ 'pill-ok' if r.email_verified else 'pill-warn' }}">{{ t('pill_email_ok') if r.email_verified else t('pill_email_no') }}</span></td>
+        <td><span class="pill {{ {'verified':'pill-ok','pending':'pill-info','rejected':'pill-danger'}.get(r.kyc.get('status'), 'pill-warn') }}">{{ t('kyc_status_' ~ (r.kyc.get('status') or 'none')) }}</span></td>
+        <td>{{ (r.created_at or '')[:10] }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

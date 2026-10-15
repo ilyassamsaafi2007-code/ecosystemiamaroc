@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ t('signup_title') if mode == 'signup' else t('login_title') }} — {{ t('app_name') }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+<section class="auth-visual">
+    <img src="{{ url_for('static', filename='login-hero.jpg') }}" alt="">
+    <a class="auth-brand" href="{{ url_for('login') }}"><span class="logo-mark">AI</span> {{ t('app_name') }}</a>
+    <div class="visual-copy"><span class="eyebrow">{{ t('auth_eyebrow') }}</span><h1>{{ t('auth_hero_title') }}</h1><p>{{ t('auth_hero_text') }}</p></div>
+    <span class="image-credit">{{ t('auth_credit') }}</span>
+</section>
+<section class="auth-panel">
+    <div class="auth-card">
+        <div class="auth-top"><div class="mobile-brand"><span class="logo-mark">AI</span> {{ t('app_name') }}</div>{% include '_lang_switch.html' %}</div>
+        <span class="eyebrow">{{ t('auth_welcome') }}</span>
+        <h2>{{ t('signup_title') if mode == 'signup' else t('login_title') }}</h2>
+        <p class="auth-subtitle">{{ t('signup_sub') if mode == 'signup' else t('login_sub') }}</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash flash-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+        <a class="google-button" href="{{ url_for('google_login') }}"><span class="google-g">G</span> {{ t('continue_google') }}</a>
+        {% if not google_enabled %}<p class="config-note">{{ t('google_note') }}</p>{% endif %}
+        <div class="auth-divider"><span>{{ t('or_email') }}</span></div>
+        <form method="post" class="auth-form">{{ csrf_input() }}
+            {% if mode == 'signup' %}<label>{{ t('f_fullname') }}<input name="name" autocomplete="name" placeholder="{{ t('ph_name') }}" required></label>{% endif %}
+            <label>{{ t('f_email') }}<input type="email" name="email" autocomplete="email" placeholder="you@example.com" dir="ltr" required></label>
+            <label>{{ t('f_password') }}<input type="password" name="password" autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}" placeholder="{{ t('ph_password_new') if mode == 'signup' else t('ph_password') }}" minlength="{{ 8 if mode == 'signup' else 1 }}" required></label>
+            {% if mode == 'signup' %}<label>{{ t('f_confirm') }}<input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required></label>{% endif %}
+            <input type="hidden" name="next" value="{{ request.args.get('next','') }}">
+            {% if turnstile_site_key %}<div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>{% endif %}
+            <button class="auth-submit" type="submit">{{ t('signup_btn') if mode == 'signup' else t('login_btn') }} <i class="fa-solid fa-arrow-right arrow"></i></button>
+        </form>
+        <p class="auth-switch">{{ t('have_account') if mode == 'signup' else t('no_account') }} <a href="{{ url_for('login' if mode == 'signup' else 'signup') }}">{{ t('login_btn') if mode == 'signup' else t('signup_link') }}</a></p>
+        <p class="auth-terms">{{ t('auth_terms') }}</p>
+    </div>
+</section>
+{% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+</body>
+</html>

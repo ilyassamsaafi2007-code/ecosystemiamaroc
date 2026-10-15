@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t('offers_title') }}{% endblock %}
+{% block content %}
+<section class="hero">
+    <span class="eyebrow">{{ t('offers_eyebrow') }}</span>
+    <h1>{{ t('offers_title') }}</h1>
+    <p class="lead">{{ t('offers_lead') }}</p>
+    <form method="get" action="{{ url_for('page_offres') }}" class="search-bar">
+        <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="text" name="q" value="{{ q }}" placeholder="{{ t('offers_search_ph') }}"></label>
+        <label class="select-field"><i class="fa-solid fa-location-dot"></i><select name="ville"><option value="">{{ t('all_cities') }}</option>{% for v in villes %}<option value="{{ v }}" {{ 'selected' if v == ville }}>{{ v }}</option>{% endfor %}</select></label>
+        <button type="submit" class="btn btn-primary">{{ t('search') }}</button>
+    </form>
+</section>
+
+{% if vide %}
+<p class="empty">{{ t('offers_empty_data') }}</p>
+{% else %}
+<p class="results-count">{{ t('offers_found', n=total) }}</p>
+<div class="cards">
+    {% for o in offres %}
+    {% set next_url = request.full_path.rstrip('?') ~ '#card-' ~ o.id %}
+    <article class="card job-card" id="card-{{ o.id }}">
+        <div class="job-head">
+            <span class="job-logo">{{ ((o.entreprise or o.source or '?')[:1])|upper }}</span>
+            <div class="job-title-wrap">
+                <a class="card-title" dir="auto" href="{{ url_for('page_offre', offre_id=o.id) }}">{{ o.titre }}</a>
+                <div class="job-company" dir="auto">{{ o.entreprise or o.source }}</div>
+            </div>
+            {% if applied.get(o.lien) %}<span class="badge badge-ok"><i class="fa-solid fa-check"></i> {{ t('applied') }}</span>{% endif %}
+        </div>
+        <div class="tags">
+            <span class="tag"><i class="fa-solid fa-location-dot"></i> {{ o.ville }}</span>
+            <span class="tag"><i class="fa-solid fa-globe"></i> {{ o.source }}</span>
+            {% if o.date_publication_norm %}<span class="tag"><i class="fa-regular fa-calendar"></i> {{ o.date_publication_norm }}</span>{% endif %}
+            {% set nc = nb_commentaires(o.lien) %}{% if nc %}<a class="tag" href="{{ url_for('page_offre', offre_id=o.id) }}#commentaires"><i class="fa-regular fa-comment"></i> {{ nc }}</a>{% endif %}
+        </div>
+        <p class="excerpt" dir="auto">{{ o.description[:220] }}{{ '…' if o.description|length > 220 }}</p>
+        <div class="actions">
+            <a class="btn btn-primary btn-sm" href="{{ o.lien }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ t('apply') }}</a>
+            <a class="btn btn-mail btn-sm" href="{{ gmail_offre(o) }}" target="_blank" rel="noopener" title="{{ t('contact_email_hint') }}"><i class="fa-regular fa-envelope"></i> {{ t('contact_email') }}</a>
+            <form method="post" action="{{ url_for('toggle') }}" class="inline-form">{{ csrf_input() }}
+                <input type="hidden" name="key" value="{{ o.lien }}"><input type="hidden" name="next" value="{{ next_url }}">
+                {% if applied.get(o.lien) %}<button class="btn btn-success btn-sm" title="{{ t('click_to_remove') }}"><i class="fa-solid fa-check"></i> {{ t('applied') }}</button>
+                {% else %}<button class="btn btn-outline btn-sm"><i class="fa-regular fa-square-check"></i> {{ t('mark_applied') }}</button>{% endif %}
+            </form>
+            <a class="btn btn-ghost btn-sm" href="{{ maps_ville(o.ville) }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> {{ t('location') }}</a>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('page_offre', offre_id=o.id) }}">{{ t('details') }} <i class="fa-solid fa-arrow-right arrow"></i></a>
+        </div>
+    </article>
+    {% else %}
+    <p class="empty">{{ t('offers_none') }}</p>
+    {% endfor %}
+</div>
+{% if nb_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}<a href="{{ url_for('page_offres', q=q, ville=ville, page=page-1) }}"><i class="fa-solid fa-arrow-left arrow"></i> {{ t('prev') }}</a>{% endif %}
+    <span>{{ t('page_of', p=page, n=nb_pages) }}</span>
+    {% if page < nb_pages %}<a href="{{ url_for('page_offres', q=q, ville=ville, page=page+1) }}">{{ t('next') }} <i class="fa-solid fa-arrow-right arrow"></i></a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_dashboard') }}{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ t('dash_eyebrow') }}</span><h1>{{ t('nav_dashboard') }}</h1></section>
+<div class="stats">
+    <div class="stat"><i class="fa-solid fa-briefcase"></i><b>{{ stats.offres }}</b><span>{{ t('stat_offers') }}</span></div>
+    <div class="stat"><i class="fa-solid fa-city"></i><b>{{ stats.villes }}</b><span>{{ t('stat_cities') }}</span></div>
+    <div class="stat"><i class="fa-solid fa-building"></i><b>{{ stats.entreprises }}</b><span>{{ t('stat_companies') }}</span></div>
+    <div class="stat"><i class="fa-solid fa-paper-plane"></i><b>{{ stats.postulees }}</b><span>{{ t('stat_applied') }}</span></div>
+</div>
+{% if g_offres %}<h2>{{ t('dash_offers') }}</h2>
+<div class="graph-grid">{% for g in g_offres %}<figure class="graph"><img src="{{ url_for('graphe_png', nom=g) }}" alt="{{ g }}" loading="lazy"></figure>{% endfor %}</div>{% endif %}
+{% if g_entreprises %}<h2>{{ t('dash_companies') }}</h2>
+<div class="graph-grid">{% for g in g_entreprises %}<figure class="graph"><img src="{{ url_for('graphe_png', nom=g) }}" alt="{{ g }}" loading="lazy"></figure>{% endfor %}</div>{% endif %}
+{% if not g_offres and not g_entreprises %}<p class="empty">{{ t('dash_empty') }}</p>{% endif %}
+{% endblock %}

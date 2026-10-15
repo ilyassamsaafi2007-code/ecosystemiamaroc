@@ -1,0 +1,3 @@
+<div class="lang-switch" role="group" aria-label="Language">
+{%- for code in langs %}<a href="{{ url_for('set_lang', code=code, next=request.full_path.rstrip('?')) }}" class="{{ 'active' if code == lang }}" hreflang="{{ code }}" lang="{{ code }}">{{ lang_names[code] }}</a>{% endfor -%}
+</div>

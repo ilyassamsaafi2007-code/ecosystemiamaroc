@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('cv_title') }}{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ t('cv_eyebrow') }}</span><h1>{{ t('cv_title') }}</h1><p class="lead">{{ t('cv_lead') }}</p></section>
+<form method="post" class="form-card">{{ csrf_input() }}
+    <div class="form-row">
+        <label>{{ t('f_firstname') }} *<input type="text" name="prenom" value="{{ v.get('prenom', '') }}" required></label>
+        <label>{{ t('f_lastname') }} *<input type="text" name="nom" value="{{ v.get('nom', '') }}" required></label>
+    </div>
+    <div class="form-row">
+        <label>{{ t('f_email') }}<input type="email" name="email" value="{{ v.get('email', '') }}" dir="ltr"></label>
+        <label>{{ t('f_phone') }}<input type="text" name="telephone" value="{{ v.get('telephone', '') }}" dir="ltr"></label>
+    </div>
+    <div class="form-row">
+        <label>{{ t('f_city') }}<input type="text" name="ville" value="{{ v.get('ville', '') }}"></label>
+        <label>{{ t('f_target_job') }}<input type="text" name="poste_recherche" value="{{ v.get('poste_recherche', '') }}" placeholder="Data Scientist"></label>
+    </div>
+    <label>{{ t('f_about') }}<textarea name="a_propos" rows="3">{{ v.get('a_propos', '') }}</textarea></label>
+    <label>{{ t('f_education') }}<textarea name="formation" rows="3">{{ v.get('formation', '') }}</textarea></label>
+    <label>{{ t('f_experience') }}<textarea name="experiences" rows="4">{{ v.get('experiences', '') }}</textarea></label>
+    <label>{{ t('f_skills') }}<textarea name="competences" rows="3">{{ v.get('competences', '') }}</textarea></label>
+    <label>{{ t('f_languages') }}<textarea name="langues" rows="2">{{ v.get('langues', '') }}</textarea></label>
+    <button type="submit" class="btn btn-primary btn-large"><i class="fa-solid fa-download"></i> {{ t('cv_submit') }}</button>
+</form>
+{% endblock %}

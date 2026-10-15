@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ t('companies_title') }}{% endblock %}
+{% block content %}
+<section class="hero">
+    <span class="eyebrow">{{ t('companies_eyebrow') }}</span>
+    <h1>{{ t('companies_title') }}</h1>
+    <p class="lead">{{ t('companies_lead') }}</p>
+    <form method="get" action="{{ url_for('page_entreprises') }}" class="search-bar">
+        <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="text" name="q" value="{{ q }}" placeholder="{{ t('companies_search_ph') }}"></label>
+        <label class="select-field"><i class="fa-solid fa-tag"></i><select name="categorie"><option value="">{{ t('all_categories') }}</option>{% for c in categories %}<option value="{{ c }}" {{ 'selected' if c == categorie }}>{{ c }}</option>{% endfor %}</select></label>
+        <label class="select-field"><i class="fa-solid fa-arrow-down-wide-short"></i><select name="tri"><option value="nom" {{ 'selected' if tri == 'nom' }}>{{ t('sort_name') }}</option><option value="note" {{ 'selected' if tri == 'note' }}>{{ t('sort_rating') }}</option></select></label>
+        <button type="submit" class="btn btn-primary">{{ t('filter') }}</button>
+    </form>
+</section>
+{% if vide %}
+<p class="empty">{{ t('companies_empty_data') }}</p>
+{% else %}
+<p class="results-count">{{ t('companies_found', n=entreprises|length) }}</p>
+<div class="cards">
+    {% for e in entreprises %}
+    {% set cle = 'entreprise:' ~ e.place_id %}
+    {% set next_url = request.full_path.rstrip('?') ~ '#card-' ~ loop.index %}
+    <article class="card job-card" id="card-{{ loop.index }}">
+        <div class="job-head">
+            <span class="job-logo">{{ (e.nom[:1] or '?')|upper }}</span>
+            <div class="job-title-wrap"><span class="card-title" dir="auto">{{ e.nom }}</span>{% if e.categorie %}<div class="job-company">{{ e.categorie }}</div>{% endif %}</div>
+            {% if applied.get(cle) %}<span class="badge badge-ok"><i class="fa-solid fa-check"></i> {{ t('applied') }}</span>{% endif %}
+        </div>
+        <div class="tags">
+            {% if e.note %}<span class="tag tag-star"><i class="fa-solid fa-star"></i> {{ e.note }}{% if e.nombre_avis %} ({{ e.nombre_avis }} {{ t('reviews') }}){% endif %}</span>{% endif %}
+            {% if e.adresse %}<span class="tag"><i class="fa-solid fa-location-dot"></i> {{ e.adresse }}</span>{% endif %}
+        </div>
+        <p class="meta">
+            {% if e.telephone %}<i class="fa-solid fa-phone"></i> <a href="tel:{{ e.telephone|replace(' ', '') }}" dir="ltr">{{ e.telephone }}</a>{% endif %}
+            {% if e.site_web %}<span class="sep">·</span><i class="fa-solid fa-globe"></i> <a href="{{ e.site_web }}" target="_blank" rel="noopener">{{ t('website') }}</a>{% endif %}
+            {% if e.email %}<span class="sep">·</span><i class="fa-regular fa-envelope"></i> <span dir="ltr">{{ e.email }}</span>{% endif %}
+        </p>
+        <div class="actions">
+            {% if e.site_web %}<a class="btn btn-primary btn-sm" href="{{ e.site_web }}" target="_blank" rel="noopener" title="{{ t('apply_site_hint') }}"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ t('apply') }}</a>
+            {% else %}<span class="btn btn-disabled btn-sm" title="{{ t('no_site_hint') }}"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ t('apply') }}</span>{% endif %}
+            <a class="btn btn-mail btn-sm" href="{{ gmail_entreprise(e) }}" target="_blank" rel="noopener" title="{{ t('contact_email_hint') }}"><i class="fa-regular fa-envelope"></i> {{ t('contact_email') }}</a>
+            <form method="post" action="{{ url_for('toggle') }}" class="inline-form">{{ csrf_input() }}
+                <input type="hidden" name="key" value="{{ cle }}"><input type="hidden" name="next" value="{{ next_url }}">
+                {% if applied.get(cle) %}<button class="btn btn-success btn-sm" title="{{ t('click_to_remove') }}"><i class="fa-solid fa-check"></i> {{ t('applied') }}</button>
+                {% else %}<button class="btn btn-outline btn-sm"><i class="fa-regular fa-square-check"></i> {{ t('mark_applied') }}</button>{% endif %}
+            </form>
+            {% if e.google_maps %}<a class="btn btn-ghost btn-sm" href="{{ e.google_maps }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> {{ t('location') }}</a>{% endif %}
+        </div>
+    </article>
+    {% else %}
+    <p class="empty">{{ t('companies_none') }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
