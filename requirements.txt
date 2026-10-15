@@ -1,0 +1,11 @@
+requests
+beautifulsoup4
+pandas
+matplotlib
+seaborn
+flask
+fpdf2
+Authlib
+pypdf
+python-dotenv
+Pillow

@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+data/users.json
+data/kyc/
+data/commentaires.json
